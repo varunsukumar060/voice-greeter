@@ -1,0 +1,17 @@
+[Unit]
+Description=VoiceGreeter - Feminine login greeting daemon
+After=graphical-session.target sound.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 3
+ExecStart=%h/.config/voice-greeter/greeter.py
+StandardOutput=journal
+StandardError=journal
+Environment=DISPLAY=:0
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+
+[Install]
+WantedBy=graphical-session.target
