@@ -1,32 +1,52 @@
-# 🎤 VoiceGreeter
+# VoiceGreeter v2 — Kokoro Neural TTS Edition
 
-A **lightweight background daemon** for Linux that greets you in a warm, feminine voice every time you log in or wake your laptop.
+A **lightweight Linux login greeter** that speaks in a natural, active, feminine AI voice using the **Kokoro 82M** neural TTS model.
 
-> *"Good morning, sir!"* / *"Welcome back, sir!"*
-
----
-
-## ✨ Features
-
-- 🌅 **Time-aware greeting** — morning / afternoon / evening / night using **internet time** (worldtimeapi.org), with local time as fallback
-- 🔁 **Session-aware** — says *"Welcome back, sir!"* on re-login or wake-from-sleep
-- 💜 **Feminine, human-tone voice** — uses `espeak-ng` with tuned pitch/speed for natural sound
-- 🪶 **Ultra-lightweight** — runs as a one-shot systemd user service, zero background CPU/RAM usage
-- 😴 **Sleep/wake support** — detects laptop suspend and greets appropriately on resume
-- 🔌 **Auto-start on boot** — systemd user service + XFCE autostart `.desktop` entry
+> *"Good morning, sir! I ran a full diagnostic while you slept. Everything is fine. You're welcome."*
 
 ---
 
-## 🛠️ Requirements
+## What's New in v2
 
-- Linux with systemd (Ubuntu/Mint/Debian based)
-- Python 3.8+
-- `espeak-ng` (auto-installed by installer)
-- PulseAudio or PipeWire (standard on most desktops)
+| Feature | v1 (espeak) | v2 (Kokoro) |
+|---------|------------|-------------|
+| Voice quality | Robotic, monotone | Natural neural AI voice |
+| Voice model | espeak-ng | **Kokoro 82M** (open-weight) |
+| Fallback | spd-say | Piper → espeak-ng |
+| Greeting style | Static phrases | **Rotating persona lines** |
+| Personas | none | Friday / Calm / Anime / WatchMojo |
+| Context hints | none | Battery & Wi-Fi announcements |
+| CLI tools | `--diagnose` | `--diagnose` `--preview` `--set-persona` `--set-voice` |
 
 ---
 
-## 📦 Installation
+## Voice Engine — Kokoro 82M
+
+[Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) is an open-weight 82M parameter TTS model that produces quality comparable to much larger models and runs fully offline on CPU.
+
+Available voices (American English):
+
+| Voice ID | Character |
+|----------|-----------|
+| `af_heart` | Warm, friendly *(default)* |
+| `af_sky` | Bright, bubbly, energetic |
+| `af_nova` | Confident, clear |
+| `bf_emma` | British feminine |
+
+---
+
+## Personas
+
+| Persona | Style | Sample line |
+|---------|-------|-------------|
+| `friday` | Iron Man's FRIDAY — witty, professional | *"Good morning, sir! Systems online. Coffee is your problem."* |
+| `calm` | Minimal, clean | *"Good morning, sir."* |
+| `anime` | Energetic, playful | *"Ohayou, senpai! The main character has logged in!"* |
+| `watchmojo` | Narrator energy | *"Good morning! Number one on today's list: you, logging in."* |
+
+---
+
+## Installation
 
 ```bash
 git clone https://github.com/varunsukumar060/voice-greeter.git
@@ -35,54 +55,64 @@ chmod +x install.sh
 ./install.sh
 ```
 
-> **Note:** The installer will ask for `sudo` only for installing `espeak-ng` and the sleep hook.
+The installer creates a Python venv, installs Kokoro, and sets up systemd + autostart.
 
 ---
 
-## 🧪 Test It
+## CLI Commands
 
 ```bash
+# Full audio + engine diagnostic
+python3 ~/.config/voice-greeter/greeter.py --diagnose
+
+# Preview all personas AND all Kokoro voices
+python3 ~/.config/voice-greeter/greeter.py --preview
+
+# Switch persona
+python3 ~/.config/voice-greeter/greeter.py --set-persona anime
+
+# Switch Kokoro voice
+python3 ~/.config/voice-greeter/greeter.py --set-voice af_sky
+
+# Trigger greeting manually
 python3 ~/.config/voice-greeter/greeter.py
 ```
 
 ---
 
-## 🗂️ File Structure
+## config.json
+
+Located at `~/.config/voice-greeter/config.json`:
+
+```json
+{
+  "engine":       "kokoro",
+  "kokoro_voice": "af_heart",
+  "persona":      "friday",
+  "context_hints": true,
+  "silent_after_first": false
+}
+```
+
+| Key | Options | Description |
+|-----|---------|-------------|
+| `engine` | `kokoro` `piper` `espeak` | Primary TTS engine |
+| `kokoro_voice` | `af_heart` `af_sky` `af_nova` `bf_emma` | Kokoro voice character |
+| `persona` | `friday` `calm` `anime` `watchmojo` | Greeting line style |
+| `context_hints` | `true`/`false` | Announce battery/Wi-Fi |
+| `silent_after_first` | `true`/`false` | Only greet once per power-on |
+
+---
+
+## Engine Fallback Chain
 
 ```
-~/.config/voice-greeter/
-├── greeter.py        ← Main greeting script
-├── reset_state.py    ← Resets session state (called on sleep)
-├── state.json        ← Tracks greeting state (auto-created)
-└── greeter.log       ← Log file (auto-created)
+Kokoro 82M → Piper TTS → espeak-ng
 ```
 
 ---
 
-## ⚙️ How It Works
-
-| Event | Trigger | Greeting |
-|-------|---------|----------|
-| First login after boot | systemd user service | *"Good [time], sir!"* |
-| Re-login / unlock | `.desktop` autostart | *"Welcome back, sir!"* |
-| Wake from sleep | `/lib/systemd/system-sleep/` hook | *"Welcome back, sir!"* |
-
----
-
-## 🎨 Customization
-
-Edit `~/.config/voice-greeter/greeter.py` to change:
-
-- **Voice**: Change `-v en-us+f3` to another espeak-ng voice variant
-- **Speed**: `-s 145` (words per minute)
-- **Pitch**: `-p 60` (0-99)
-- **Messages**: Edit the `message` strings in `main()`
-
-List available voices: `espeak-ng --voices | grep en`
-
----
-
-## 🗑️ Uninstall
+## Uninstall
 
 ```bash
 ./uninstall.sh
@@ -90,6 +120,6 @@ List available voices: `espeak-ng --voices | grep en`
 
 ---
 
-## 📄 License
+## License
 
-MIT License — do whatever you want with it!
+MIT — do whatever you want with it!
